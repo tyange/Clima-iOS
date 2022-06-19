@@ -7,25 +7,43 @@
 //
 
 import UIKit
+// iPhone의 GPS 데이터를 이용한다.
+import CoreLocation
 
 // UI와 관련된 프로토콜 외에도
 // WeatherManager에서 별도로 정의한 WeatherMangaerDelegate 프로토콜도 채택.
-class WeatherViewController: UIViewController, UITextFieldDelegate, WeatherManagerDelegate {
+class WeatherViewController: UIViewController {
 
     @IBOutlet weak var conditionImageView: UIImageView!
     @IBOutlet weak var temperatureLabel: UILabel!
     @IBOutlet weak var cityLabel: UILabel!
     @IBOutlet weak var searchTextField: UITextField!
+   
     
     var weatherManager = WeatherManager()
+    let locationManager = CLLocationManager()
     
     override func viewDidLoad() {
         super.viewDidLoad()
-       
+        
+        
+        locationManager.delegate = self
+        // 사용자에게 위치 정보 제공에 동의하는지 물어보기.
+        locationManager.requestWhenInUseAuthorization()
+        locationManager.requestLocation()
+        
         weatherManager.delegate = self
         searchTextField.delegate = self
     }
+    
+    @IBAction func locationPressed(_ sender: UIButton) {
+        locationManager.requestLocation()
+    }
+}
 
+//MARK: - UITextFiledDelegate
+
+extension WeatherViewController: UITextFieldDelegate {
     @IBAction func searchPressed(_ sender: UIButton) {
         searchTextField.endEditing(true)
         print(searchTextField.text!)
@@ -53,7 +71,11 @@ class WeatherViewController: UIViewController, UITextFieldDelegate, WeatherManag
         
         searchTextField.text = ""
     }
-    
+}
+
+//MARK: - WeatherManagerDelegate
+
+extension WeatherViewController: WeatherManagerDelegate {
     // 위에서 채택된 WeatherMangerDelegate 프로토콜에 의해,
     // didUpdateWeather 함수는 외부에서 사용할 수 있음.
     
@@ -65,12 +87,28 @@ class WeatherViewController: UIViewController, UITextFieldDelegate, WeatherManag
         DispatchQueue.main.async {
             self.temperatureLabel.text = weather.temparatureString
             self.conditionImageView.image = UIImage(systemName: weather.conditionName)
+            self.cityLabel.text = weather.cityName
         }
     }
     
     func didFailWithError(error: Error) {
         print(error)
     }
-    
 }
 
+//MARK: - CLLocationManagerDelegate
+
+extension WeatherViewController: CLLocationManagerDelegate {
+    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+        if let location = locations.last {
+            locationManager.stopUpdatingLocation()
+            let lat = location.coordinate.latitude
+            let lon = location.coordinate.longitude
+            weatherManager.fetchWeather(latitude: lat, longitude: lon)
+        }
+    }
+    
+    func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
+        print(error)
+    }
+}

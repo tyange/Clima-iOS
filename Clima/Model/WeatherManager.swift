@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import CoreLocation
 
 // WeatherManagerDelegate 프로토콜을 정의.
 // WeatherManagerDelegate 프로토콜은 didUpdateWeather 함수를 내장하고 있다.
@@ -23,6 +24,11 @@ struct WeatherManager {
     
     func fetchWeather(cityName: String) {
         let urlString = "\(weatherURL)&q=\(cityName)"
+        performRequest(with: urlString)
+    }
+    
+    func fetchWeather(latitude: CLLocationDegrees, longitude: CLLocationDegrees) {
+        let urlString = "\(weatherURL)&lat=\(latitude)&lon=\(longitude)"
         performRequest(with: urlString)
     }
     
